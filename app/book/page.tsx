@@ -17,38 +17,22 @@ function buildPages(photos: Photo[]) {
   return pages;
 }
 
-function PhotoItem({ photo }: { photo: Photo; rotation: number }) {
-  const [orientation, setOrientation] = useState<"landscape" | "portrait" | "square">("square");
-
-  const imageClass =
-    orientation === "portrait"
-      ? "max-h-[35vh] max-w-[76%] sm:max-h-[39vh] sm:max-w-[80%] landscape:max-h-[37vh] landscape:max-w-[80%]"
-      : orientation === "landscape"
-        ? "max-h-[23vh] max-w-[94%] sm:max-h-[27vh] sm:max-w-[94%] landscape:max-h-[23vh] landscape:max-w-[94%]"
-        : "max-h-[27vh] max-w-[82%] sm:max-h-[31vh] sm:max-w-[84%] landscape:max-h-[27vh] landscape:max-w-[84%]";
-
+function PhotoItem({ photo, className = "" }: { photo: Photo; className?: string }) {
   return (
     <motion.figure
-      initial={{ opacity: 0, scale: 0.92 }}
+      initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative flex min-h-0 w-fit max-w-full justify-self-center items-center justify-center"
+      transition={{ duration: 0.25 }}
+      className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden border border-white/90 bg-white p-[3px] shadow-[0_1px_4px_rgba(51,64,77,.18)] ${className}`}
     >
-      <div className="flex max-h-[37vh] max-w-full items-center justify-center overflow-visible rounded-[2px] border border-ink/20 bg-[#fffdf8] p-[3px] shadow-[0_2px_5px_-4px_rgba(51,64,77,.35)] sm:max-h-[41vh] sm:p-1 landscape:max-h-[39vh] landscape:p-[3px]">
-        <img
-          src={photo.src}
-          alt={photo.caption || photo.name}
-          onLoad={(event) => {
-            const { naturalWidth, naturalHeight } = event.currentTarget;
-            setOrientation(
-              naturalWidth > naturalHeight ? "landscape" : naturalHeight > naturalWidth ? "portrait" : "square",
-            );
-          }}
-          className={`block h-auto w-auto object-contain ${imageClass}`}
-          draggable={false}
-        />
-      </div>
+      <img
+        src={photo.src}
+        alt={photo.caption || photo.name}
+        className="block h-full w-full object-contain"
+        draggable={false}
+      />
       {photo.caption && (
-        <figcaption className="mt-0.5 max-w-full truncate px-1 text-center font-display text-xs text-ink sm:text-base">
+        <figcaption className="absolute bottom-1 left-1 right-1 truncate bg-white/75 px-1 text-center font-display text-[9px] text-ink sm:text-xs">
           {photo.caption}
         </figcaption>
       )}
@@ -56,22 +40,41 @@ function PhotoItem({ photo }: { photo: Photo; rotation: number }) {
   );
 }
 
-function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }) {
-  const rotations = [-3, 2, -1.5, 3, -2];
+function PhotoPage({ photos, pageIndex, side }: { photos: Photo[]; pageIndex: number; side: "left" | "right" }) {
+  const count = photos.length;
 
   return (
-    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden rounded-sm bg-cardstock px-[10px] py-[10px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.45)] sm:min-h-[58vh] sm:px-10 sm:py-10 landscape:min-h-0 landscape:px-[10px] landscape:py-[10px]">
-      <div className="pointer-events-none absolute inset-x-4 top-3 h-px bg-white/40 sm:inset-x-10" aria-hidden="true" />
-      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-[2px] sm:min-h-[50vh] sm:gap-[3px] landscape:min-h-0 landscape:gap-[2px]">
-        {photos.map((photo, index) => (
-          <PhotoItem key={photo.id} photo={photo} rotation={rotations[index]} />
-        ))}
-        {photos.length < PAGE_MIN && (
+    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[10px] py-[10px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.35)] sm:min-h-[58vh] sm:px-4 sm:py-4 landscape:min-h-0 landscape:px-[10px] landscape:py-[10px]">
+      <div className="pointer-events-none absolute inset-0 border border-black/[0.06]" aria-hidden="true" />
+
+      <div
+        className={
+          side === "right" && count <= 3
+            ? "relative grid h-full min-h-[46vh] grid-cols-1 grid-rows-2 gap-1.5 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0"
+            : count >= 4
+              ? "relative grid h-full min-h-[46vh] grid-cols-4 grid-rows-4 gap-1.5 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0"
+              : "relative grid h-full min-h-[46vh] grid-cols-2 grid-rows-2 gap-1.5 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0"
+        }
+      >
+        {photos.map((photo, index) => {
+          if (side === "right" && count <= 3) {
+            return <PhotoItem key={photo.id} photo={photo} className="col-span-1 row-span-1" />;
+          }
+
+          if (count >= 4) {
+            if (index === 0) return <PhotoItem key={photo.id} photo={photo} className="col-span-2 row-span-4" />;
+            return <PhotoItem key={photo.id} photo={photo} className="col-span-2 row-span-1" />;
+          }
+
+          return <PhotoItem key={photo.id} photo={photo} className="col-span-1 row-span-1" />;
+        })}
+
+        {count < PAGE_MIN && (
           <Link
             href="/"
             aria-label="Add a photo"
             title="Add a photo"
-            className="flex aspect-[4/3] items-center justify-center rounded-sm border-2 border-dashed border-ink/25 bg-white/20 text-ink/45 transition hover:border-ink/50 hover:bg-white/35 hover:text-ink/70"
+            className="flex items-center justify-center border border-dashed border-ink/25 bg-white/30 text-ink/45 transition hover:border-ink/50 hover:bg-white/50 hover:text-ink/70"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-current sm:h-11 sm:w-11">
               <Plus />
@@ -79,7 +82,8 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
           </Link>
         )}
       </div>
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-typewriter text-[8px] tracking-[.2em] text-ink/35 landscape:bottom-0.5">
+
+      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 font-typewriter text-[7px] tracking-[.2em] text-ink/30">
         PAGE {pageIndex + 1}
       </div>
     </section>
@@ -151,7 +155,7 @@ export default function BookPage() {
           {!isLoading && hasPhotos && (
             <div className="w-full max-w-6xl landscape:flex landscape:h-[calc(100dvh-2.5rem)] landscape:flex-col landscape:justify-center">
               <div
-                className="relative mx-auto flex max-w-6xl overflow-hidden rounded-lg bg-[#d8c9a9] shadow-[0_35px_90px_-25px_rgba(0,0,0,.7)] [perspective:1800px] landscape:h-[calc(100dvh-2.5rem)] landscape:w-[calc(100vw-1rem)] landscape:max-w-none landscape:rounded-md"
+                className="relative mx-auto flex max-w-6xl overflow-hidden rounded-lg bg-[#e8e3d5] shadow-[0_35px_90px_-25px_rgba(0,0,0,.7)] [perspective:1800px] landscape:h-[calc(100dvh-2.5rem)] landscape:w-[calc(100vw-1rem)] landscape:max-w-none landscape:rounded-md"
                 style={{ touchAction: "pan-y" }}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -167,12 +171,12 @@ export default function BookPage() {
                     className="flex w-full flex-col sm:flex-row landscape:flex-row"
                     style={{ transformOrigin: spread > 0 ? "left center" : "center center", transformStyle: "preserve-3d" }}
                   >
-                    <PhotoPage photos={left} pageIndex={spread * 2} />
+                    <PhotoPage photos={left} pageIndex={spread * 2} side="left" />
                     <div className="h-px w-full bg-black/10 sm:h-auto sm:w-px landscape:h-auto landscape:w-px" />
-                    <PhotoPage photos={right} pageIndex={spread * 2 + 1} />
+                    <PhotoPage photos={right} pageIndex={spread * 2 + 1} side="right" />
                   </motion.div>
                 </AnimatePresence>
-                <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-6 -translate-x-1/2 bg-gradient-to-r from-black/10 via-black/5 to-black/10 sm:block landscape:block landscape:w-3" />
+                <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-5 -translate-x-1/2 bg-gradient-to-r from-black/10 via-black/5 to-black/10 sm:block landscape:block landscape:w-3" />
               </div>
 
               <div className="mt-5 flex items-center justify-center gap-4 sm:mt-7 sm:gap-7 landscape:mt-1 landscape:gap-3">
