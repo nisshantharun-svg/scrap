@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --kraft: #FFFFFF;
-  --kraft-dark: #96784a;
+  --kraft: #0b1020;
+  --kraft-dark: #050814;
   --cardstock: #f5e9d0;
   --cardstock-edge: #e8d7ae;
   --ink: #33404d;
@@ -20,57 +20,249 @@
   --color-rose: var(--rose);
   --color-teal: var(--teal);
   --color-gold: var(--gold);
+
   --font-display: var(--font-caveat);
   --font-sans: var(--font-geist-sans);
   --font-typewriter: var(--font-special-elite);
 }
 
+html,
+body {
+  min-height: 100%;
+}
+
 body {
   background-color: var(--kraft);
-  color: var(--ink);
+  color: var(--cardstock);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Procedural paper grain, no image asset required. Layered on top of any
-   element via the .paper-grain class; opacity kept low so it reads as
-   texture rather than noise. */
+/* Night-sky scrapbook background */
+.kraft-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 20% 15%,
+      rgba(76, 105, 170, 0.2),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 80% 25%,
+      rgba(114, 75, 139, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(37, 91, 100, 0.14),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      #111a35 0%,
+      #0b1020 45%,
+      #060a15 100%
+    );
+}
+
+/* Subtle paper/scrapbook grain */
 .paper-grain {
   position: relative;
 }
+
 .paper-grain::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 20;
+
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.22;
-  mix-blend-mode: multiply;
+
+  opacity: 0.09;
+  mix-blend-mode: screen;
 }
 
-/* Soft vignette behind the whole page, like a photo of a desk rather than
-   a flat fill. */
-.kraft-surface {
-  background-color: var(--kraft);
+/* Soft glow that gives the background depth */
+.kraft-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(255, 255, 255, 0.045),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 10% 90%,
+      rgba(193, 160, 107, 0.04),
+      transparent 30%
+    );
+}
+
+/* Star field */
+.kraft-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+
   background-image:
-    radial-gradient(120% 90% at 50% -10%, rgba(255, 255, 255, 0.12), transparent 60%),
-    radial-gradient(140% 100% at 50% 110%, var(--kraft-dark), transparent 65%);
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(255, 220, 150, 0.45) 0 1px, transparent 1.5px);
+
+  background-size:
+    180px 170px,
+    240px 230px,
+    310px 290px;
+
+  background-position:
+    20px 30px,
+    90px 120px,
+    160px 70px;
+
+  opacity: 0.28;
 }
 
+/* Shooting star container */
+.shooting-stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Individual shooting stars */
+.shooting-star {
+  position: absolute;
+  width: 90px;
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 236, 190, 0.95)
+  );
+
+  border-radius: 999px;
+  opacity: 0;
+
+  transform: rotate(-28deg);
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+
+  animation: shooting-star 7s linear infinite;
+}
+
+.shooting-star::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+
+  transform: translateY(-50%);
+  border-radius: 50%;
+
+  background: #fff;
+  box-shadow: 0 0 7px rgba(255, 255, 255, 0.8);
+}
+
+/* Different star positions/timing */
+.shooting-star:nth-child(1) {
+  top: 18%;
+  left: 72%;
+  animation-delay: 1s;
+}
+
+.shooting-star:nth-child(2) {
+  top: 38%;
+  left: 25%;
+  animation-delay: 4s;
+  transform: rotate(-32deg) scale(0.7);
+}
+
+.shooting-star:nth-child(3) {
+  top: 62%;
+  left: 78%;
+  animation-delay: 6s;
+  transform: rotate(-25deg) scale(0.55);
+}
+
+@keyframes shooting-star {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(-28deg);
+  }
+
+  5% {
+    opacity: 0.8;
+  }
+
+  15% {
+    opacity: 0.55;
+  }
+
+  25% {
+    opacity: 0;
+    transform: translate(-180px, 120px) rotate(-28deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-180px, 120px) rotate(-28deg);
+  }
+}
+
+/* Scrapbook entrance animation */
 @keyframes settle-in {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.96) rotate(var(--settle-rotate, 0deg));
+    transform:
+      translateY(14px)
+      scale(0.96)
+      rotate(var(--settle-rotate, 0deg));
   }
+
   to {
     opacity: 1;
-    transform: translateY(0) scale(1) rotate(var(--settle-rotate, 0deg));
+    transform:
+      translateY(0)
+      scale(1)
+      rotate(var(--settle-rotate, 0deg));
   }
 }
 
 .animate-settle-in {
-  animation: settle-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation:
+    settle-in 0.5s cubic-bezier(0.22, 1, 0.36, 1)
+    both;
 }
 
+/* Keep the scrapbook cards readable against the darker background */
+.scrapbook-card {
+  box-shadow:
+    0 12px 25px rgba(0, 0, 0, 0.18),
+    0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Soft handwritten decorative texture */
+.scrapbook-decoration {
+  opacity: 0.7;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
+}
+
+/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -83,11 +275,11 @@ body {
 }
 
 :focus-visible {
-  outline: 2px dashed var(--rose);
+  outline: 2px dashed var(--gold);
   outline-offset: 3px;
 }
 
 ::selection {
   background-color: var(--gold);
-  color: var(--ink);
+  color: #0b1020;
 }
