@@ -30,7 +30,12 @@ function ShootingStars() {
         <motion.div
           key={index}
           className="absolute h-3"
-          style={{ top: star.top, left: star.left, width: star.size + 18 }}
+          style={{
+            top: star.top,
+            left: star.left,
+            width: star.size + 18,
+            rotate: 35,
+          }}
           initial={{ x: "-18vw", y: "-18vh", opacity: 0 }}
           animate={{
             x: "62vw",
@@ -45,7 +50,6 @@ function ShootingStars() {
             ease: "easeIn",
           }}
         >
-          {/* Soft outer glow */}
           <div
             className="absolute left-0 top-1/2 h-2 w-full -translate-y-1/2 origin-right rounded-full blur-[4px]"
             style={{
@@ -54,7 +58,6 @@ function ShootingStars() {
             }}
           />
 
-          {/* Tapered luminous trail */}
           <div
             className="absolute left-0 top-1/2 h-[1.5px] w-full -translate-y-1/2 origin-right rounded-full"
             style={{
@@ -63,7 +66,6 @@ function ShootingStars() {
             }}
           />
 
-          {/* Bright head */}
           <div className="absolute right-0 top-1/2 h-[5px] w-[5px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_4px_2px_rgba(255,255,255,0.85),0_0_12px_4px_rgba(255,255,255,0.35)]" />
         </motion.div>
       ))}
