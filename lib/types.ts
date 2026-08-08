@@ -5,13 +5,13 @@
 export interface Photo {
   id: string;
   name: string;
-  /** Same-origin proxy URL (/api/image/[id]) — never a raw Drive link. */
   src: string;
   createdTime: string;
   width?: number;
   height?: number;
-  /** Optional handwritten-style note, stored in the Drive file's description. */
   caption?: string;
+  /** True only when this browser created the photo. */
+  canDelete?: boolean;
 }
 
 export interface PhotosPage {
