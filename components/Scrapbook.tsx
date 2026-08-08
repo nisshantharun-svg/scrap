@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import { useState } from "react";
@@ -27,13 +26,12 @@ export function Scrapbook() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const showInitialError = error && photos.length === 0 && !isLoading;
+  const showInitialError =
+    error && photos.length === 0 && !isLoading;
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {/* Subtle decorative night-sky details */}
-
-      {/* Soft decorative glow */}
+      {/* Decorative night-sky glow */}
       <div
         className="pointer-events-none absolute left-[8%] top-[12%] h-32 w-32 rounded-full bg-blue-200/5 blur-3xl"
         aria-hidden="true"
@@ -44,7 +42,9 @@ export function Scrapbook() {
         aria-hidden="true"
       />
 
-      <UploadButton onClick={() => setIsModalOpen(true)} />
+      <UploadButton
+        onClick={() => setIsModalOpen(true)}
+      />
 
       <AnimatePresence>
         {isModalOpen && (
@@ -74,7 +74,7 @@ export function Scrapbook() {
             sm:py-14
           "
         >
-          {/* Subtle paper edge/highlight */}
+          {/* Subtle paper edge */}
           <div
             className="pointer-events-none absolute inset-x-5 top-3 h-px bg-white/40 sm:inset-x-10"
             aria-hidden="true"
@@ -89,9 +89,9 @@ export function Scrapbook() {
             />
           )}
 
-          {!isLoading && !showInitialError && photos.length === 0 && (
-            <EmptyState />
-          )}
+          {!isLoading &&
+            !showInitialError &&
+            photos.length === 0 && <EmptyState />}
 
           {!isLoading && photos.length > 0 && (
             <>
