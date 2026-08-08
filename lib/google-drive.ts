@@ -23,7 +23,7 @@ function getFolderId(): string { return readRequiredEnv("GOOGLE_DRIVE_FOLDER_ID"
 
 const PHOTO_FIELDS = "id, name, createdTime, mimeType, description, imageMediaMetadata(width, height)";
 
-function parseDescription(description?: string): { caption?: string; ownerId?: string } {
+function parseDescription(description?: string | null): { caption?: string; ownerId?: string } {
   if (!description) return {};
   const match = description.match(new RegExp(`^${OWNER_PREFIX.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}([^\\n]+)(?:\\n)?([\\s\\S]*)$`));
   if (!match) return { caption: description };
