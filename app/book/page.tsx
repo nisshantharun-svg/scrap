@@ -23,9 +23,11 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
       <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.8),transparent_35%)]" />
       <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-4 sm:min-h-[50vh] sm:gap-5">
         {photos.map((photo, index) => (
-          <motion.figure key={photo.id} initial={{ opacity: 0, scale: .92, rotate: rotations[index] }} animate={{ opacity: 1, scale: 1, rotate: rotations[index] }} className="relative bg-[#fffdf8] p-2 shadow-[0_8px_18px_-8px_rgba(51,64,77,.45)] sm:p-3">
-            <img src={photo.src} alt={photo.caption || photo.name} className="aspect-[4/3] w-full object-cover" />
-            {photo.caption && <figcaption className="mt-1 truncate text-center font-display text-sm text-ink sm:text-lg">{photo.caption}</figcaption>}
+          <motion.figure key={photo.id} initial={{ opacity: 0, scale: .92, rotate: rotations[index] }} animate={{ opacity: 1, scale: 1, rotate: rotations[index] }} className="relative flex min-h-0 items-center justify-center bg-[#fffdf8] p-2 shadow-[0_8px_18px_-8px_rgba(51,64,77,.45)] sm:p-3">
+            <div className="flex min-h-0 w-full items-center justify-center overflow-hidden">
+              <img src={photo.src} alt={photo.caption || photo.name} className="block h-auto max-h-[22vh] w-auto max-w-full object-contain sm:max-h-[24vh]" />
+            </div>
+            {photo.caption && <figcaption className="mt-1 max-w-full truncate text-center font-display text-sm text-ink sm:text-lg">{photo.caption}</figcaption>}
           </motion.figure>
         ))}
         {photos.length < PAGE_MIN && (
@@ -47,7 +49,6 @@ export default function BookPage() {
   const right = pages[spread * 2 + 1] ?? [];
   const hasPhotos = photos.length > 0;
   const spreadCount = Math.max(1, Math.ceil(pages.length / 2));
-
   const turn = (direction: 1 | -1) => setSpread((current) => Math.max(0, Math.min(current + direction, spreadCount - 1)));
 
   return (
@@ -78,7 +79,7 @@ export default function BookPage() {
                 <span className="font-typewriter text-[9px] tracking-[.18em] text-white/55 sm:text-xs">SPREAD {spread + 1} / {spreadCount}</span>
                 <button type="button" onClick={() => turn(1)} disabled={spread === spreadCount - 1} aria-label="Next spread" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 disabled:opacity-20 sm:h-12 sm:w-12"><ChevronRight /></button>
               </div>
-              <p className="mt-3 text-center font-typewriter text-[9px] text-white/35 sm:text-xs">Each page holds 3–5 photos when possible • double-spread photos count as one • up to 5 photos per page</p>
+              <p className="mt-3 text-center font-typewriter text-[9px] text-white/35 sm:text-xs">Photos are always shown in full • each page holds 3–5 photos when possible • double-spread photos count as one</p>
             </div>
           )}
         </div>
