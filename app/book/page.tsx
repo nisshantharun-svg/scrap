@@ -19,24 +19,24 @@ function buildPages(photos: Photo[]) {
 function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }) {
   const rotations = [-3, 2, -1.5, 3, -2];
   return (
-    <section className="relative min-h-[52vh] flex-1 overflow-hidden bg-[#f1e5ca] p-5 shadow-inner sm:min-h-[58vh] sm:p-7">
+    <section className="relative min-h-[52vh] flex-1 overflow-hidden bg-[#f1e5ca] p-3 shadow-inner sm:min-h-[58vh] sm:p-5">
       <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.8),transparent_35%)]" />
-      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-4 sm:min-h-[50vh] sm:gap-5">
+      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-3 sm:min-h-[50vh] sm:gap-4">
         {photos.map((photo, index) => (
-          <motion.figure key={photo.id} initial={{ opacity: 0, scale: .92, rotate: rotations[index] }} animate={{ opacity: 1, scale: 1, rotate: rotations[index] }} className="relative flex min-h-0 items-center justify-center bg-[#fffdf8] p-2 shadow-[0_8px_18px_-8px_rgba(51,64,77,.45)] sm:p-3">
+          <motion.figure key={photo.id} initial={{ opacity: 0, scale: .92, rotate: rotations[index] }} animate={{ opacity: 1, scale: 1, rotate: rotations[index] }} className="relative flex min-h-0 items-center justify-center bg-[#fffdf8] p-0.5 shadow-[0_4px_10px_-6px_rgba(51,64,77,.4)] sm:p-1">
             <div className="flex min-h-0 w-full items-center justify-center overflow-hidden">
-              <img src={photo.src} alt={photo.caption || photo.name} className="block h-auto max-h-[22vh] w-auto max-w-full object-contain sm:max-h-[24vh]" />
+              <img src={photo.src} alt={photo.caption || photo.name} className="block h-auto max-h-[24vh] w-auto max-w-full object-contain sm:max-h-[27vh]" />
             </div>
-            {photo.caption && <figcaption className="mt-1 max-w-full truncate text-center font-display text-sm text-ink sm:text-lg">{photo.caption}</figcaption>}
+            {photo.caption && <figcaption className="mt-0.5 max-w-full truncate px-1 text-center font-display text-xs text-ink sm:text-base">{photo.caption}</figcaption>}
           </motion.figure>
         ))}
         {photos.length < PAGE_MIN && (
           <Link href="/" aria-label="Add a photo" title="Add a photo" className="flex aspect-[4/3] items-center justify-center rounded-sm border-2 border-dashed border-ink/25 bg-white/20 text-ink/45 transition hover:border-ink/50 hover:bg-white/35 hover:text-ink/70">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-current sm:h-12 sm:w-12"><Plus /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-current sm:h-11 sm:w-11"><Plus /></span>
           </Link>
         )}
       </div>
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 font-typewriter text-[9px] tracking-[.2em] text-ink/35">PAGE {pageIndex + 1}</div>
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-typewriter text-[8px] tracking-[.2em] text-ink/35">PAGE {pageIndex + 1}</div>
     </section>
   );
 }
@@ -68,7 +68,7 @@ export default function BookPage() {
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div key={spread} initial={{ rotateY: spread > 0 ? -88 : 0, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} exit={{ rotateY: 88, opacity: 0 }} transition={{ duration: .7, ease: [0.22,1,0.36,1] }} className="flex w-full flex-col sm:flex-row" style={{ transformOrigin: spread > 0 ? "left center" : "center center", transformStyle: "preserve-3d" }}>
                     <PhotoPage photos={left} pageIndex={spread * 2} />
-                    <div className="h-px w-full bg-black/20 shadow-[0_0_14px_rgba(0,0,0,.2)] sm:h-auto sm:w-px" />
+                    <div className="h-px w-full bg-black/20 shadow-[0_0_10px_rgba(0,0,0,.18)] sm:h-auto sm:w-px" />
                     <PhotoPage photos={right} pageIndex={spread * 2 + 1} />
                   </motion.div>
                 </AnimatePresence>
