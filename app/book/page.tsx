@@ -10,6 +10,7 @@ import type { Photo } from "@/lib/types";
 const PAGE_MIN = 3;
 const PAGE_MAX = 5;
 const SWIPE_THRESHOLD = 60;
+const PHOTO_GAP = "2px";
 
 function buildPages(photos: Photo[]) {
   const pages: Photo[][] = [];
@@ -17,22 +18,22 @@ function buildPages(photos: Photo[]) {
   return pages;
 }
 
-function PhotoItem({ photo, className = "" }: { photo: Photo; className?: string }) {
+function PhotoItem({ photo }: { photo: Photo }) {
   return (
     <motion.figure
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.25 }}
-      className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden border border-white bg-white p-px ${className}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="mb-[2px] break-inside-avoid overflow-hidden border border-white bg-white p-px leading-none"
     >
       <img
         src={photo.src}
         alt={photo.caption || photo.name}
-        className="block h-full w-full object-contain"
+        className="block h-auto w-full object-contain"
         draggable={false}
       />
       {photo.caption && (
-        <figcaption className="absolute bottom-1 left-1 right-1 truncate bg-white/75 px-1 text-center font-display text-[9px] text-ink sm:text-xs">
+        <figcaption className="truncate bg-white/80 px-1 py-0.5 text-center font-display text-[9px] leading-tight text-ink sm:text-xs">
           {photo.caption}
         </figcaption>
       )}
@@ -40,41 +41,36 @@ function PhotoItem({ photo, className = "" }: { photo: Photo; className?: string
   );
 }
 
-function PhotoPage({ photos, pageIndex, side }: { photos: Photo[]; pageIndex: number; side: "left" | "right" }) {
-  const count = photos.length;
+function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }) {
+  const leftColumn = photos.filter((_, index) => index % 2 === 0);
+  const rightColumn = photos.filter((_, index) => index % 2 === 1);
 
   return (
-    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[4px] py-[4px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.35)] sm:min-h-[58vh] sm:px-1 sm:py-1 landscape:min-h-0 landscape:px-[4px] landscape:py-[4px]">
+    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[4px] py-[4px] sm:min-h-[58vh] sm:px-1 sm:py-1 landscape:min-h-0 landscape:px-[4px] landscape:py-[4px]">
       <div className="pointer-events-none absolute inset-0 border border-black/[0.06]" aria-hidden="true" />
 
       <div
-        className={
-          side === "right" && count <= 3
-            ? "relative grid h-full min-h-[46vh] grid-cols-1 grid-rows-2 gap-px sm:min-h-[50vh] landscape:min-h-0"
-            : count >= 4
-              ? "relative grid h-full min-h-[46vh] grid-cols-4 grid-rows-4 gap-px sm:min-h-[50vh] landscape:min-h-0"
-              : "relative grid h-full min-h-[46vh] grid-cols-2 grid-rows-2 gap-px sm:min-h-[50vh] landscape:min-h-0"
-        }
+        className="relative grid h-full min-h-[46vh] grid-cols-2 items-start gap-[2px] sm:min-h-[50vh] landscape:min-h-0"
+        style={{ columnGap: PHOTO_GAP }}
       >
-        {photos.map((photo, index) => {
-          if (side === "right" && count <= 3) {
-            return <PhotoItem key={photo.id} photo={photo} className="col-span-1 row-span-1" />;
-          }
+        <div className="min-w-0 space-y-[2px]">
+          {leftColumn.map((photo) => (
+            <PhotoItem key={photo.id} photo={photo} />
+          ))}
+        </div>
 
-          if (count >= 4) {
-            if (index === 0) return <PhotoItem key={photo.id} photo={photo} className="col-span-2 row-span-4" />;
-            return <PhotoItem key={photo.id} photo={photo} className="col-span-2 row-span-1" />;
-          }
+        <div className="min-w-0 space-y-[2px]">
+          {rightColumn.map((photo) => (
+            <PhotoItem key={photo.id} photo={photo} />
+          ))}
+        </div>
 
-          return <PhotoItem key={photo.id} photo={photo} className="col-span-1 row-span-1" />;
-        })}
-
-        {count < PAGE_MIN && (
+        {photos.length < PAGE_MIN && (
           <Link
             href="/"
             aria-label="Add a photo"
             title="Add a photo"
-            className="flex items-center justify-center border border-dashed border-ink/25 bg-white/30 text-ink/45 transition hover:border-ink/50 hover:bg-white/50 hover:text-ink/70"
+            className="col-span-2 flex min-h-24 items-center justify-center border border-dashed border-ink/25 bg-white/30 text-ink/45 transition hover:border-ink/50 hover:bg-white/50 hover:text-ink/70"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-current sm:h-11 sm:w-11">
               <Plus />
@@ -171,9 +167,9 @@ export default function BookPage() {
                     className="flex w-full flex-col sm:flex-row landscape:flex-row"
                     style={{ transformOrigin: spread > 0 ? "left center" : "center center", transformStyle: "preserve-3d" }}
                   >
-                    <PhotoPage photos={left} pageIndex={spread * 2} side="left" />
+                    <PhotoPage photos={left} pageIndex={spread * 2} />
                     <div className="h-px w-full bg-black/10 sm:h-auto sm:w-px landscape:h-auto landscape:w-px" />
-                    <PhotoPage photos={right} pageIndex={spread * 2 + 1} side="right" />
+                    <PhotoPage photos={right} pageIndex={spread * 2 + 1} />
                   </motion.div>
                 </AnimatePresence>
                 <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-5 -translate-x-1/2 bg-gradient-to-r from-black/10 via-black/5 to-black/10 sm:block landscape:block landscape:w-3" />
