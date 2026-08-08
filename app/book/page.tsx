@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { usePhotos } from "@/hooks/usePhotos";
@@ -10,7 +10,7 @@ import type { Photo } from "@/lib/types";
 const PAGE_MIN = 3;
 const PAGE_MAX = 5;
 const SWIPE_THRESHOLD = 60;
-const PHOTO_GAP = "2px";
+const PHOTO_GAP = 2;
 
 function buildPages(photos: Photo[]) {
   const pages: Photo[][] = [];
@@ -18,13 +18,14 @@ function buildPages(photos: Photo[]) {
   return pages;
 }
 
-function PhotoItem({ photo }: { photo: Photo }) {
+function PhotoItem({ photo, scale = 1 }: { photo: Photo; scale?: number }) {
   return (
     <motion.figure
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="mb-[2px] break-inside-avoid overflow-hidden border border-white bg-white p-px leading-none"
+      className="relative mb-[2px] flex break-inside-avoid items-center justify-center overflow-hidden border border-white bg-white p-px leading-none"
+      style={{ width: `${Math.max(0.58, Math.min(1, scale)) * 100}%` }}
     >
       <img
         src={photo.src}
@@ -33,7 +34,7 @@ function PhotoItem({ photo }: { photo: Photo }) {
         draggable={false}
       />
       {photo.caption && (
-        <figcaption className="truncate bg-white/80 px-1 py-0.5 text-center font-display text-[9px] leading-tight text-ink sm:text-xs">
+        <figcaption className="absolute bottom-1 left-1 right-1 truncate bg-white/75 px-1 py-0.5 text-center font-display text-[9px] leading-tight text-ink sm:text-xs">
           {photo.caption}
         </figcaption>
       )}
@@ -41,28 +42,86 @@ function PhotoItem({ photo }: { photo: Photo }) {
   );
 }
 
+function PhotoColumn({ photos, scale }: { photos: Photo[]; scale: number }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-[2px]">
+      {photos.map((photo) => (
+        <PhotoItem key={photo.id} photo={photo} scale={scale} />
+      ))}
+    </div>
+  );
+}
+
 function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }) {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+
   const leftColumn = photos.filter((_, index) => index % 2 === 0);
   const rightColumn = photos.filter((_, index) => index % 2 === 1);
 
+  useEffect(() => {
+    const element = pageRef.current;
+    if (!element) return;
+
+    const updateSize = () => {
+      const rect = element.getBoundingClientRect();
+      setPageSize({ width: rect.width, height: rect.height });
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    window.addEventListener("resize", updateSize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateSize);
+    };
+  }, []);
+
+  const setRatio = (photo: Photo, image: HTMLImageElement) => {
+    if (!image.naturalWidth || !image.naturalHeight) return;
+    const ratio = image.naturalWidth / image.naturalHeight;
+    setRatios((current) => (current[photo.id] === ratio ? current : { ...current, [photo.id]: ratio }));
+  };
+
+  const getColumnScale = (column: Photo[]) => {
+    if (!column.length || !pageSize.width || !pageSize.height) return 1;
+
+    const columnWidth = Math.max(1, (pageSize.width - PHOTO_GAP) / 2);
+    const availableHeight = Math.max(1, pageSize.height - 8);
+    const naturalHeight = column.reduce((total, photo) => {
+      const ratio = ratios[photo.id] ?? 1;
+      return total + columnWidth / ratio;
+    }, 0) + Math.max(0, column.length - 1) * PHOTO_GAP;
+
+    return Math.min(1, availableHeight / naturalHeight);
+  };
+
+  const leftScale = getColumnScale(leftColumn);
+  const rightScale = getColumnScale(rightColumn);
+
   return (
-    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[4px] py-[4px] sm:min-h-[58vh] sm:px-1 sm:py-1 landscape:min-h-0 landscape:px-[4px] landscape:py-[4px]">
+    <section ref={pageRef} className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[4px] py-[4px] sm:min-h-[58vh] sm:px-1 sm:py-1 landscape:min-h-0 landscape:px-[4px] landscape:py-[4px]">
       <div className="pointer-events-none absolute inset-0 border border-black/[0.06]" aria-hidden="true" />
 
-      <div
-        className="relative grid h-full min-h-[46vh] grid-cols-2 items-start gap-[2px] sm:min-h-[50vh] landscape:min-h-0"
-        style={{ columnGap: PHOTO_GAP }}
-      >
-        <div className="min-w-0 space-y-[2px]">
+      <div className="relative grid h-full min-h-[46vh] grid-cols-2 items-start gap-[2px] sm:min-h-[50vh] landscape:min-h-0">
+        <div className="min-w-0">
           {leftColumn.map((photo) => (
-            <PhotoItem key={photo.id} photo={photo} />
+            <div key={photo.id} className="hidden">
+              <img src={photo.src} alt="" onLoad={(event) => setRatio(photo, event.currentTarget)} />
+            </div>
           ))}
+          <PhotoColumn photos={leftColumn} scale={leftScale} />
         </div>
 
-        <div className="min-w-0 space-y-[2px]">
+        <div className="min-w-0">
           {rightColumn.map((photo) => (
-            <PhotoItem key={photo.id} photo={photo} />
+            <div key={photo.id} className="hidden">
+              <img src={photo.src} alt="" onLoad={(event) => setRatio(photo, event.currentTarget)} />
+            </div>
           ))}
+          <PhotoColumn photos={rightColumn} scale={rightScale} />
         </div>
 
         {photos.length < PAGE_MIN && (
