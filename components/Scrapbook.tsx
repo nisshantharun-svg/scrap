@@ -47,16 +47,16 @@ export function Scrapbook() {
       <AnimatePresence>
         {isModalOpen && <UploadModal onClose={() => setIsModalOpen(false)} onUploaded={(uploadedPhotos) => uploadedPhotos.forEach(addPhoto)} />}
       </AnimatePresence>
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-3 pb-24 sm:px-8">
         <Header />
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="paper-grain relative rounded-sm bg-cardstock px-4 py-10 shadow-[0_24px_60px_-25px_rgba(0,0,0,0.55)] sm:px-10 sm:py-14">
-          <div className="pointer-events-none absolute inset-x-5 top-3 h-px bg-white/40 sm:inset-x-10" aria-hidden="true" />
+        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="paper-grain relative rounded-sm bg-cardstock px-3 py-8 shadow-[0_24px_60px_-25px_rgba(0,0,0,0.55)] sm:px-10 sm:py-14">
+          <div className="pointer-events-none absolute inset-x-4 top-3 h-px bg-white/40 sm:inset-x-10" aria-hidden="true" />
           {isLoading && <PhotoSkeletonGrid />}
           {showInitialError && <ErrorBanner message={error} onRetry={refresh} />}
           {!isLoading && !showInitialError && photos.length === 0 && <EmptyState />}
           {!isLoading && photos.length > 0 && (
             <>
-              <div className="columns-1 gap-6 sm:columns-2 lg:columns-3 xl:columns-4">
+              <div className="columns-2 gap-3 sm:columns-2 sm:gap-6 lg:columns-3 xl:columns-4">
                 {photos.map((photo, index) => <PhotoCard key={photo.id} photo={photo} index={index} onDelete={removePhoto} />)}
               </div>
               {error && <p className="mt-8 text-center text-sm text-ink/50">{error} — recent photos are still shown above.</p>}
