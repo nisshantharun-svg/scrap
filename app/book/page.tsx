@@ -22,7 +22,7 @@ function PhotoItem({ photo, rotation }: { photo: Photo; rotation: number }) {
 
   const imageClass =
     orientation === "portrait"
-      ? "max-h-[30vh] max-w-[68%] sm:max-h-[34vh] sm:max-w-[72%] landscape:max-h-[32vh] landscape:max-w-[72%]"
+      ? "max-h-[35vh] max-w-[76%] sm:max-h-[39vh] sm:max-w-[80%] landscape:max-h-[37vh] landscape:max-w-[80%]"
       : orientation === "landscape"
         ? "max-h-[23vh] max-w-[94%] sm:max-h-[27vh] sm:max-w-[94%] landscape:max-h-[23vh] landscape:max-w-[94%]"
         : "max-h-[27vh] max-w-[82%] sm:max-h-[31vh] sm:max-w-[84%] landscape:max-h-[27vh] landscape:max-w-[84%]";
@@ -33,7 +33,7 @@ function PhotoItem({ photo, rotation }: { photo: Photo; rotation: number }) {
       animate={{ opacity: 1, scale: 1, rotate: rotation }}
       className="relative flex min-h-0 w-fit max-w-full justify-self-center items-center justify-center"
     >
-      <div className="flex max-h-[32vh] max-w-full items-center justify-center overflow-visible rounded-[2px] border border-ink/20 bg-[#fffdf8] p-[3px] shadow-[0_2px_5px_-4px_rgba(51,64,77,.35)] sm:max-h-[36vh] sm:p-1 landscape:max-h-[34vh] landscape:p-[3px]">
+      <div className="flex max-h-[37vh] max-w-full items-center justify-center overflow-visible rounded-[2px] border border-ink/20 bg-[#fffdf8] p-[3px] shadow-[0_2px_5px_-4px_rgba(51,64,77,.35)] sm:max-h-[41vh] sm:p-1 landscape:max-h-[39vh] landscape:p-[3px]">
         <img
           src={photo.src}
           alt={photo.caption || photo.name}
@@ -62,7 +62,7 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
   return (
     <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden rounded-sm bg-cardstock px-[10px] py-[10px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.45)] sm:min-h-[58vh] sm:px-10 sm:py-10 landscape:min-h-0 landscape:px-[10px] landscape:py-[10px]">
       <div className="pointer-events-none absolute inset-x-4 top-3 h-px bg-white/40 sm:inset-x-10" aria-hidden="true" />
-      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-[10px] sm:min-h-[50vh] sm:gap-5 landscape:min-h-0 landscape:gap-[10px]">
+      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-1 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0 landscape:gap-1">
         {photos.map((photo, index) => (
           <PhotoItem key={photo.id} photo={photo} rotation={rotations[index]} />
         ))}
