@@ -18,20 +18,21 @@ function buildPages(photos: Photo[]) {
   return pages;
 }
 
-function PhotoItem({ photo, scale = 1 }: { photo: Photo; scale?: number }) {
+function PhotoItem({ photo, width }: { photo: Photo; width: number }) {
   return (
     <motion.figure
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="relative mb-[2px] flex break-inside-avoid items-center justify-center overflow-hidden border border-white bg-white p-px leading-none"
-      style={{ width: `${Math.max(0.58, Math.min(1, scale)) * 100}%` }}
+      className="relative mx-auto mb-[2px] flex break-inside-avoid items-center justify-center overflow-hidden border border-white bg-white p-px leading-none"
+      style={{ width: `${width}px`, maxWidth: "100%" }}
     >
       <img
         src={photo.src}
         alt={photo.caption || photo.name}
         className="block h-auto w-full object-contain"
         draggable={false}
+        onLoad={() => undefined}
       />
       {photo.caption && (
         <figcaption className="absolute bottom-1 left-1 right-1 truncate bg-white/75 px-1 py-0.5 text-center font-display text-[9px] leading-tight text-ink sm:text-xs">
@@ -42,11 +43,11 @@ function PhotoItem({ photo, scale = 1 }: { photo: Photo; scale?: number }) {
   );
 }
 
-function PhotoColumn({ photos, scale }: { photos: Photo[]; scale: number }) {
+function PhotoColumn({ photos, widths }: { photos: Photo[]; widths: Record<string, number> }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-[2px]">
       {photos.map((photo) => (
-        <PhotoItem key={photo.id} photo={photo} scale={scale} />
+        <PhotoItem key={photo.id} photo={photo} width={widths[photo.id] ?? 0} />
       ))}
     </div>
   );
@@ -79,27 +80,38 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
     };
   }, []);
 
-  const setRatio = (photo: Photo, image: HTMLImageElement) => {
+  const recordRatio = (photo: Photo, image: HTMLImageElement) => {
     if (!image.naturalWidth || !image.naturalHeight) return;
     const ratio = image.naturalWidth / image.naturalHeight;
     setRatios((current) => (current[photo.id] === ratio ? current : { ...current, [photo.id]: ratio }));
   };
 
-  const getColumnScale = (column: Photo[]) => {
-    if (!column.length || !pageSize.width || !pageSize.height) return 1;
+  const getWidths = (column: Photo[]) => {
+    if (!column.length || !pageSize.width || !pageSize.height) return {};
 
     const columnWidth = Math.max(1, (pageSize.width - PHOTO_GAP) / 2);
     const availableHeight = Math.max(1, pageSize.height - 8);
+    const known = column.every((photo) => ratios[photo.id]);
+
+    // Until the real dimensions are known, let the browser display the photos
+    // naturally rather than applying a guessed scale that can make them tiny.
+    if (!known) {
+      return Object.fromEntries(column.map((photo) => [photo.id, columnWidth]));
+    }
+
     const naturalHeight = column.reduce((total, photo) => {
-      const ratio = ratios[photo.id] ?? 1;
+      const ratio = ratios[photo.id];
       return total + columnWidth / ratio;
     }, 0) + Math.max(0, column.length - 1) * PHOTO_GAP;
 
-    return Math.min(1, availableHeight / naturalHeight);
+    const scale = Math.min(1, availableHeight / naturalHeight);
+    const width = columnWidth * scale;
+
+    return Object.fromEntries(column.map((photo) => [photo.id, width]));
   };
 
-  const leftScale = getColumnScale(leftColumn);
-  const rightScale = getColumnScale(rightColumn);
+  const leftWidths = getWidths(leftColumn);
+  const rightWidths = getWidths(rightColumn);
 
   return (
     <section ref={pageRef} className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[4px] py-[4px] sm:min-h-[58vh] sm:px-1 sm:py-1 landscape:min-h-0 landscape:px-[4px] landscape:py-[4px]">
@@ -108,20 +120,20 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
       <div className="relative grid h-full min-h-[46vh] grid-cols-2 items-start gap-[2px] sm:min-h-[50vh] landscape:min-h-0">
         <div className="min-w-0">
           {leftColumn.map((photo) => (
-            <div key={photo.id} className="hidden">
-              <img src={photo.src} alt="" onLoad={(event) => setRatio(photo, event.currentTarget)} />
+            <div key={photo.id} className="hidden" aria-hidden="true">
+              <img src={photo.src} alt="" onLoad={(event) => recordRatio(photo, event.currentTarget)} />
             </div>
           ))}
-          <PhotoColumn photos={leftColumn} scale={leftScale} />
+          <PhotoColumn photos={leftColumn} widths={leftWidths} />
         </div>
 
         <div className="min-w-0">
           {rightColumn.map((photo) => (
-            <div key={photo.id} className="hidden">
-              <img src={photo.src} alt="" onLoad={(event) => setRatio(photo, event.currentTarget)} />
+            <div key={photo.id} className="hidden" aria-hidden="true">
+              <img src={photo.src} alt="" onLoad={(event) => recordRatio(photo, event.currentTarget)} />
             </div>
           ))}
-          <PhotoColumn photos={rightColumn} scale={rightScale} />
+          <PhotoColumn photos={rightColumn} widths={rightWidths} />
         </div>
 
         {photos.length < PAGE_MIN && (
