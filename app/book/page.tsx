@@ -23,7 +23,7 @@ function PhotoItem({ photo, className = "" }: { photo: Photo; className?: string
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.25 }}
-      className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden border border-white/90 bg-white p-[3px] shadow-[0_1px_4px_rgba(51,64,77,.18)] ${className}`}
+      className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden border border-white bg-white p-px ${className}`}
     >
       <img
         src={photo.src}
@@ -44,16 +44,16 @@ function PhotoPage({ photos, pageIndex, side }: { photos: Photo[]; pageIndex: nu
   const count = photos.length;
 
   return (
-    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[10px] py-[10px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.35)] sm:min-h-[58vh] sm:px-4 sm:py-4 landscape:min-h-0 landscape:px-[10px] landscape:py-[10px]">
+    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden bg-[#f7f5ee] px-[4px] py-[4px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.35)] sm:min-h-[58vh] sm:px-1 sm:py-1 landscape:min-h-0 landscape:px-[4px] landscape:py-[4px]">
       <div className="pointer-events-none absolute inset-0 border border-black/[0.06]" aria-hidden="true" />
 
       <div
         className={
           side === "right" && count <= 3
-            ? "relative grid h-full min-h-[46vh] grid-cols-1 grid-rows-2 gap-1.5 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0"
+            ? "relative grid h-full min-h-[46vh] grid-cols-1 grid-rows-2 gap-px sm:min-h-[50vh] landscape:min-h-0"
             : count >= 4
-              ? "relative grid h-full min-h-[46vh] grid-cols-4 grid-rows-4 gap-1.5 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0"
-              : "relative grid h-full min-h-[46vh] grid-cols-2 grid-rows-2 gap-1.5 sm:min-h-[50vh] sm:gap-2 landscape:min-h-0"
+              ? "relative grid h-full min-h-[46vh] grid-cols-4 grid-rows-4 gap-px sm:min-h-[50vh] landscape:min-h-0"
+              : "relative grid h-full min-h-[46vh] grid-cols-2 grid-rows-2 gap-px sm:min-h-[50vh] landscape:min-h-0"
         }
       >
         {photos.map((photo, index) => {
