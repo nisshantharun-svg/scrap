@@ -21,8 +21,8 @@ const specialElite = Special_Elite({
 });
 
 export const metadata: Metadata = {
-  title: "Our Scrapbook",
-  description: "A collaborative digital scrapbook — paste in a photo, everyone sees it.",
+  title: "Vidyut's Photo Book",
+  description: "Post any Photo from the birthday here.",
 };
 
 export const viewport: Viewport = {
