@@ -24,8 +24,8 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
       <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-3 sm:min-h-[50vh] sm:gap-4">
         {photos.map((photo, index) => (
           <motion.figure key={photo.id} initial={{ opacity: 0, scale: .92, rotate: rotations[index] }} animate={{ opacity: 1, scale: 1, rotate: rotations[index] }} className="relative flex min-h-0 items-center justify-center bg-[#fffdf8] p-0.5 shadow-[0_4px_10px_-6px_rgba(51,64,77,.4)] sm:p-1">
-            <div className="flex min-h-0 w-full items-center justify-center overflow-hidden">
-              <img src={photo.src} alt={photo.caption || photo.name} className="block h-auto max-h-[24vh] w-auto max-w-full object-contain sm:max-h-[27vh]" />
+            <div className="flex max-h-[28vh] max-w-[120%] items-center justify-center overflow-hidden sm:max-h-[32vh]">
+              <img src={photo.src} alt={photo.caption || photo.name} className="block h-auto max-h-[26vh] w-auto max-w-full object-contain sm:max-h-[30vh]" />
             </div>
             {photo.caption && <figcaption className="mt-0.5 max-w-full truncate px-1 text-center font-display text-xs text-ink sm:text-base">{photo.caption}</figcaption>}
           </motion.figure>
