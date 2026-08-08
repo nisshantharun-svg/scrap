@@ -9,7 +9,6 @@ const POLL_INTERVAL_MS = 30_000;
 async function fetchPage(pageToken?: string): Promise<PhotosPage> {
   const params = new URLSearchParams({ pageSize: String(PAGE_SIZE) });
   if (pageToken) params.set("pageToken", pageToken);
-
   const response = await fetch(`/api/photos?${params.toString()}`);
   if (!response.ok) {
     const body = await response.json().catch(() => null);
@@ -18,22 +17,12 @@ async function fetchPage(pageToken?: string): Promise<PhotosPage> {
   return response.json();
 }
 
-/**
- * Owns the photo list end to end: initial load, "load more" pagination,
- * background polling so photos other people add show up without a
- * refresh, and optimistic insertion right after this browser's own
- * upload finishes.
- */
 export function usePhotos() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
-
-  // Tracks every photo id we've already shown, across pages and polls, so
-  // polling can prepend only what's genuinely new without ever duplicating
-  // a card.
   const knownIds = useRef<Set<string>>(new Set());
 
   const loadFirstPage = useCallback(async (signal: { cancelled: boolean }) => {
@@ -45,9 +34,7 @@ export function usePhotos() {
       setNextPageToken(page.nextPageToken);
       setError(null);
     } catch (err) {
-      if (!signal.cancelled) {
-        setError(err instanceof Error ? err.message : "Couldn't load photos.");
-      }
+      if (!signal.cancelled) setError(err instanceof Error ? err.message : "Couldn't load photos.");
     } finally {
       if (!signal.cancelled) setIsLoading(false);
     }
@@ -55,18 +42,11 @@ export function usePhotos() {
 
   useEffect(() => {
     const signal = { cancelled: false };
-    // Deferred a tick so nothing here sets state synchronously during the
-    // effect's own execution — mirrors how the polling effect below hands
-    // its work to setInterval instead of calling it inline.
     Promise.resolve().then(() => loadFirstPage(signal));
-    return () => {
-      signal.cancelled = true;
-    };
+    return () => { signal.cancelled = true; };
   }, [loadFirstPage]);
 
   const refresh = useCallback(() => {
-    // Safe to set state synchronously here — this runs from a click
-    // handler, not from inside an effect.
     setIsLoading(true);
     loadFirstPage({ cancelled: false });
   }, [loadFirstPage]);
@@ -77,23 +57,17 @@ export function usePhotos() {
         const page = await fetchPage();
         const freshPhotos = page.photos.filter((photo) => !knownIds.current.has(photo.id));
         if (freshPhotos.length === 0) return;
-
         freshPhotos.forEach((photo) => knownIds.current.add(photo.id));
         setPhotos((current) => [...freshPhotos, ...current]);
       } catch {
-        // A background poll failing quietly isn't worth interrupting the
-        // person's browsing with an error banner — the next poll will
-        // retry, and manual actions (upload, load more) still surface
-        // their own errors.
+        // Background polling retries silently.
       }
     }, POLL_INTERVAL_MS);
-
     return () => clearInterval(interval);
   }, []);
 
   const loadMore = useCallback(async () => {
     if (!nextPageToken || isLoadingMore) return;
-
     try {
       setIsLoadingMore(true);
       const page = await fetchPage(nextPageToken);
@@ -115,6 +89,17 @@ export function usePhotos() {
     setPhotos((current) => [photo, ...current]);
   }, []);
 
+  const removePhoto = useCallback(async (photo: Photo) => {
+    if (!photo.canDelete) return;
+    const response = await fetch(`/api/photos/${encodeURIComponent(photo.id)}`, { method: "DELETE" });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? "Couldn't delete that photo.");
+    }
+    knownIds.current.delete(photo.id);
+    setPhotos((current) => current.filter((item) => item.id !== photo.id));
+  }, []);
+
   return {
     photos,
     isLoading,
@@ -123,6 +108,7 @@ export function usePhotos() {
     hasMore: nextPageToken !== null,
     loadMore,
     addPhoto,
+    removePhoto,
     refresh,
   };
 }
