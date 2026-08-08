@@ -14,12 +14,11 @@ import { UploadModal } from "./UploadModal";
 
 function ShootingStars() {
   const stars = [
-    { top: "8%", left: "5%", delay: 0, duration: 2.8 },
-    { top: "22%", left: "65%", delay: 2.2, duration: 3.2 },
-    { top: "42%", left: "25%", delay: 4.5, duration: 2.6 },
-    { top: "58%", left: "80%", delay: 1.2, duration: 3 },
-    { top: "75%", left: "45%", delay: 6, duration: 2.7 },
-    { top: "15%", left: "85%", delay: 7.5, duration: 3.4 },
+    { top: "8%", left: "6%", delay: 0, duration: 2.7, size: 86 },
+    { top: "25%", left: "72%", delay: 2.8, duration: 3.1, size: 72 },
+    { top: "48%", left: "18%", delay: 5.4, duration: 2.9, size: 96 },
+    { top: "63%", left: "82%", delay: 1.4, duration: 3.3, size: 78 },
+    { top: "78%", left: "48%", delay: 7.1, duration: 2.8, size: 88 },
   ];
 
   return (
@@ -30,23 +29,43 @@ function ShootingStars() {
       {stars.map((star, index) => (
         <motion.div
           key={index}
-          className="absolute h-[2px] w-20 origin-left rounded-full bg-white/70 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-          style={{ top: star.top, left: star.left, rotate: 35 }}
-          initial={{ x: "-10vw", y: "-10vh", opacity: 0, scaleX: 0.3 }}
+          className="absolute h-3"
+          style={{ top: star.top, left: star.left, width: star.size + 18 }}
+          initial={{ x: "-18vw", y: "-18vh", opacity: 0 }}
           animate={{
-            x: "55vw",
-            y: "55vh",
-            opacity: [0, 1, 1, 0],
-            scaleX: [0.3, 1, 1.2, 0.2],
+            x: "62vw",
+            y: "62vh",
+            opacity: [0, 0, 1, 1, 0],
           }}
           transition={{
             duration: star.duration,
             delay: star.delay,
             repeat: Infinity,
-            repeatDelay: 3 + index * 0.8,
+            repeatDelay: 4 + index * 1.1,
             ease: "easeIn",
           }}
-        />
+        >
+          {/* Soft outer glow */}
+          <div
+            className="absolute left-0 top-1/2 h-2 w-full -translate-y-1/2 origin-right rounded-full blur-[4px]"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 35%, rgba(255,255,255,0.35) 78%, rgba(255,255,255,0.8) 100%)",
+            }}
+          />
+
+          {/* Tapered luminous trail */}
+          <div
+            className="absolute left-0 top-1/2 h-[1.5px] w-full -translate-y-1/2 origin-right rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.35) 70%, rgba(255,255,255,0.95) 100%)",
+            }}
+          />
+
+          {/* Bright head */}
+          <div className="absolute right-0 top-1/2 h-[5px] w-[5px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_4px_2px_rgba(255,255,255,0.85),0_0_12px_4px_rgba(255,255,255,0.35)]" />
+        </motion.div>
       ))}
     </div>
   );
