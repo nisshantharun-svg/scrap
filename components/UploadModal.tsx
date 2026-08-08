@@ -9,7 +9,7 @@ import type { Photo } from "@/lib/types";
 
 interface UploadModalProps {
   onClose: () => void;
-  onUploaded: (photo: Photo) => void;
+  onUploaded: (photos: Photo[]) => void;
 }
 
 type Status = "idle" | "preparing" | "uploading" | "error";
@@ -19,26 +19,25 @@ const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif,.h
 function isAcceptableFile(file: File): boolean {
   const type = file.type.toLowerCase();
   if (type.startsWith("image/")) return true;
-  // HEIC files sometimes arrive with an empty MIME type.
   return /\.hei[cf]$/i.test(file.name);
 }
 
 export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [caption, setCaption] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [previewUrl]);
+  }, [previewUrls]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -48,55 +47,85 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const selectFile = useCallback((file: File) => {
-    if (!isAcceptableFile(file)) {
+  const selectFiles = useCallback((files: File[]) => {
+    const validFiles = files.filter(isAcceptableFile);
+
+    if (validFiles.length !== files.length) {
       setStatus("error");
-      setErrorMessage("That doesn't look like a photo. Please choose a JPG, PNG, WebP, or HEIC file.");
-      return;
+      setErrorMessage("One or more files aren't supported. Please choose JPG, PNG, WebP, or HEIC photos.");
+    } else {
+      setStatus("idle");
+      setErrorMessage(null);
     }
-    setSelectedFile(file);
-    setPreviewUrl((current) => {
-      if (current) URL.revokeObjectURL(current);
-      return URL.createObjectURL(file);
+
+    if (validFiles.length === 0) return;
+
+    setSelectedFiles((current) => {
+      const existing = new Set(current.map((file) => `${file.name}-${file.size}-${file.lastModified}`));
+      return [
+        ...current,
+        ...validFiles.filter(
+          (file) => !existing.has(`${file.name}-${file.size}-${file.lastModified}`),
+        ),
+      ];
     });
-    setStatus("idle");
-    setErrorMessage(null);
   }, []);
 
+  useEffect(() => {
+    const urls = selectedFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls((current) => {
+      current.forEach((url) => URL.revokeObjectURL(url));
+      return urls;
+    });
+
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [selectedFiles]);
+
   function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) selectFile(file);
+    const files = Array.from(event.target.files ?? []);
+    if (files.length) selectFiles(files);
+    event.target.value = "";
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setIsDraggingOver(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) selectFile(file);
+    selectFiles(Array.from(event.dataTransfer.files ?? []));
+  }
+
+  function removeFile(index: number) {
+    setSelectedFiles((current) => current.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!selectedFile || status === "preparing" || status === "uploading") return;
+    if (!selectedFiles.length || status === "preparing" || status === "uploading") return;
 
     setErrorMessage(null);
+    const uploadedPhotos: Photo[] = [];
+
     try {
-      setStatus("preparing");
-      const { blob, filename } = await prepareImageForUpload(selectedFile);
+      for (let index = 0; index < selectedFiles.length; index += 1) {
+        setStatus("preparing");
+        const { blob, filename } = await prepareImageForUpload(selectedFiles[index]);
 
-      setStatus("uploading");
-      const formData = new FormData();
-      formData.append("file", blob, filename);
-      if (caption.trim()) formData.append("caption", caption.trim());
+        setStatus("uploading");
+        const formData = new FormData();
+        formData.append("file", blob, filename);
+        if (caption.trim()) formData.append("caption", caption.trim());
 
-      const response = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? "The upload didn't go through.");
+        const response = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.error ?? `Upload failed for photo ${index + 1}.`);
+        }
+
+        const { photo } = (await response.json()) as { photo: Photo };
+        uploadedPhotos.push(photo);
+        setUploadProgress(Math.round(((index + 1) / selectedFiles.length) * 100));
       }
 
-      const { photo } = (await response.json()) as { photo: Photo };
-      onUploaded(photo);
+      onUploaded(uploadedPhotos);
       onClose();
     } catch (error) {
       setStatus("error");
@@ -114,7 +143,6 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
       }}
     >
       <motion.div
-        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="upload-modal-title"
@@ -122,7 +150,7 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 10 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
-        className="relative w-full max-w-sm rounded-sm bg-[#fffdf8] p-6 shadow-[0_24px_60px_-12px_rgba(51,64,77,0.5)] sm:p-7"
+        className="relative w-full max-w-lg rounded-sm bg-[#fffdf8] p-6 shadow-[0_24px_60px_-12px_rgba(51,64,77,0.5)] sm:p-7"
       >
         <button
           type="button"
@@ -134,9 +162,9 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
         </button>
 
         <h2 id="upload-modal-title" className="font-display text-3xl text-ink">
-          Add a memory
+          Add memories
         </h2>
-        <p className="mt-1 text-sm text-ink/60">It&apos;ll be pasted right in for everyone to see.</p>
+        <p className="mt-1 text-sm text-ink/60">Choose one or several photos to paste into the scrapbook.</p>
 
         <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
           <div
@@ -152,31 +180,58 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") fileInputRef.current?.click();
             }}
-            className={`flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed px-4 py-6 text-center transition-colors ${
+            className={`flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-sm border-2 border-dashed px-4 py-6 text-center transition-colors ${
               isDraggingOver ? "border-rose bg-rose/5" : "border-ink/25 hover:border-ink/40"
             }`}
           >
-            {previewUrl ? (
-              <div className="relative h-32 w-full overflow-hidden rounded-sm">
-                <Image src={previewUrl} alt="Selected preview" fill className="object-contain" unoptimized />
+            {selectedFiles.length > 0 ? (
+              <div className="grid max-h-52 w-full grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
+                {previewUrls.map((url, index) => (
+                  <div key={url} className="relative aspect-square overflow-hidden rounded-sm bg-ink/5">
+                    <Image src={url} alt={`Selected photo ${index + 1}`} fill className="object-cover" unoptimized />
+                    <button
+                      type="button"
+                      aria-label={`Remove photo ${index + 1}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeFile(index);
+                      }}
+                      className="absolute right-1 top-1 rounded-full bg-ink/70 p-1 text-white"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
             ) : (
               <>
                 <ImagePlus className="h-8 w-8 text-ink/40" />
                 <p className="text-sm text-ink/60">
-                  Drop a photo here, or <span className="text-rose underline">browse</span>
+                  Drop photos here, or <span className="text-rose underline">browse</span>
                 </p>
-                <p className="text-xs text-ink/40">JPG, PNG, WebP, or HEIC</p>
+                <p className="text-xs text-ink/40">You can select multiple JPG, PNG, WebP, or HEIC photos</p>
               </>
             )}
             <input
               ref={fileInputRef}
               type="file"
               accept={ACCEPTED_TYPES}
+              multiple
               onChange={handleFileInputChange}
               className="hidden"
             />
           </div>
+
+          {selectedFiles.length > 0 && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isBusy}
+              className="text-sm text-rose underline disabled:opacity-50"
+            >
+              Add more photos
+            </button>
+          )}
 
           <div>
             <label htmlFor="caption" className="mb-1 block font-typewriter text-[11px] uppercase tracking-wide text-ink/50">
@@ -188,7 +243,7 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
               value={caption}
               onChange={(event) => setCaption(event.target.value)}
               maxLength={280}
-              placeholder="Say something about this one..."
+              placeholder="Say something about these..."
               className="w-full border-b-2 border-ink/20 bg-transparent px-1 py-1.5 font-display text-xl text-ink placeholder:text-ink/30 focus:border-rose focus:outline-none"
             />
           </div>
@@ -197,15 +252,21 @@ export function UploadModal({ onClose, onUploaded }: UploadModalProps) {
             <p className="rounded-sm bg-rose/10 px-3 py-2 text-sm text-ink">{errorMessage}</p>
           )}
 
+          {isBusy && (
+            <p className="text-center text-sm text-ink/60">
+              {status === "preparing" ? "Preparing photos..." : `Pasting photo ${Math.ceil((uploadProgress / 100) * selectedFiles.length) || 1} of ${selectedFiles.length}...`}
+            </p>
+          )}
+
           <button
             type="submit"
-            disabled={!selectedFile || isBusy}
+            disabled={!selectedFiles.length || isBusy}
             className="mt-1 flex items-center justify-center gap-2 rounded-sm bg-gold px-4 py-3 font-display text-xl text-[#fffdf8] transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isBusy && <Loader2 className="h-5 w-5 animate-spin" />}
-            {status === "preparing" && "Preparing photo..."}
-            {status === "uploading" && "Pasting it in..."}
-            {(status === "idle" || status === "error") && "Paste it in"}
+            {status === "preparing" && "Preparing photos..."}
+            {status === "uploading" && `Pasting ${selectedFiles.length} photo${selectedFiles.length === 1 ? "" : "s"}...`}
+            {(status === "idle" || status === "error") && `Paste ${selectedFiles.length || "your"} photo${selectedFiles.length === 1 ? "" : "s"} in`}
           </button>
         </form>
       </motion.div>
