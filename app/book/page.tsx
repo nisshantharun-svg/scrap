@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { usePhotos } from "@/hooks/usePhotos";
 
 export default function BookPage() {
   const { photos, isLoading, error } = usePhotos();
   const [page, setPage] = useState(0);
   const bookPhotos = photos.slice(0, 5);
-  const hasEnoughPhotos = bookPhotos.length >= 3;
   const photo = bookPhotos[page];
+  const hasPhotos = bookPhotos.length > 0;
 
   const next = () => setPage((current) => Math.min(current + 1, bookPhotos.length - 1));
   const previous = () => setPage((current) => Math.max(current - 1, 0));
@@ -26,17 +26,16 @@ export default function BookPage() {
 
         <div className="flex flex-1 items-center justify-center">
           {isLoading && <p className="font-typewriter text-white/60">Opening the book...</p>}
-          {error && bookPhotos.length === 0 && <p className="font-typewriter text-white/70">{error}</p>}
+          {error && !hasPhotos && <p className="font-typewriter text-white/70">{error}</p>}
 
-          {!isLoading && !error && !hasEnoughPhotos && (
+          {!isLoading && !error && !hasPhotos && (
             <div className="max-w-md text-center">
-              <p className="font-display text-4xl">The book needs a few more memories.</p>
-              <p className="mt-3 font-typewriter text-sm text-white/55">Add at least 3 photos to open the photo book. The book uses a maximum of 5 photos at a time.</p>
+              <p className="font-display text-4xl">Your book is waiting for its first memory.</p>
               <Link href="/" className="mt-6 inline-flex rounded-full bg-white/10 px-5 py-2 font-display text-xl hover:bg-white/20">Add photos</Link>
             </div>
           )}
 
-          {!isLoading && hasEnoughPhotos && photo && (
+          {!isLoading && hasPhotos && photo && (
             <div className="w-full max-w-5xl">
               <div className="relative mx-auto min-h-[62vh] max-w-4xl overflow-hidden rounded-md bg-[#eadfc7] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.65)]">
                 <div className="pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px bg-black/15" />
@@ -56,7 +55,15 @@ export default function BookPage() {
                 <span className="font-typewriter text-xs tracking-[0.2em] text-white/60">PHOTO {page + 1} / {bookPhotos.length}</span>
                 <button type="button" onClick={next} disabled={page === bookPhotos.length - 1} aria-label="Next spread" className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 disabled:opacity-25"><ChevronRight /></button>
               </div>
-              <p className="mt-3 text-center font-typewriter text-xs text-white/40">Each double-page spread counts as one photo • 3–5 photos per book</p>
+
+              {bookPhotos.length < 5 && (
+                <div className="mt-6 flex justify-center">
+                  <Link href="/" aria-label="Add another photo" title="Add another photo" className="group flex h-24 w-24 items-center justify-center rounded-sm border-2 border-dashed border-white/35 bg-white/5 text-white/50 transition hover:border-white/65 hover:bg-white/10 hover:text-white">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/35 transition group-hover:border-white/65"><Plus className="h-6 w-6" /></span>
+                  </Link>
+                </div>
+              )}
+              <p className="mt-3 text-center font-typewriter text-xs text-white/40">Each double-page spread counts as one photo • Up to 5 photos per book</p>
             </div>
           )}
         </div>
