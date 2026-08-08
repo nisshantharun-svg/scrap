@@ -18,17 +18,32 @@ function buildPages(photos: Photo[]) {
 }
 
 function PhotoItem({ photo, rotation }: { photo: Photo; rotation: number }) {
+  const [orientation, setOrientation] = useState<"landscape" | "portrait" | "square">("square");
+
+  const imageClass =
+    orientation === "portrait"
+      ? "max-h-[30vh] max-w-[68%] sm:max-h-[34vh] sm:max-w-[72%] landscape:max-h-[32vh] landscape:max-w-[72%]"
+      : orientation === "landscape"
+        ? "max-h-[23vh] max-w-[94%] sm:max-h-[27vh] sm:max-w-[94%] landscape:max-h-[23vh] landscape:max-w-[94%]"
+        : "max-h-[27vh] max-w-[82%] sm:max-h-[31vh] sm:max-w-[84%] landscape:max-h-[27vh] landscape:max-w-[84%]";
+
   return (
     <motion.figure
       initial={{ opacity: 0, scale: 0.92, rotate: rotation }}
       animate={{ opacity: 1, scale: 1, rotate: rotation }}
       className="relative flex min-h-0 w-fit max-w-full justify-self-center items-center justify-center"
     >
-      <div className="flex max-h-[28vh] max-w-full items-center justify-center overflow-hidden sm:max-h-[32vh]">
+      <div className="flex max-h-[32vh] max-w-full items-center justify-center overflow-visible rounded-[2px] border border-ink/20 bg-[#fffdf8] p-[3px] shadow-[0_2px_5px_-4px_rgba(51,64,77,.35)] sm:max-h-[36vh] sm:p-1 landscape:max-h-[34vh] landscape:p-[3px]">
         <img
           src={photo.src}
           alt={photo.caption || photo.name}
-          className="block h-auto max-h-[26vh] w-auto max-w-full object-contain sm:max-h-[30vh]"
+          onLoad={(event) => {
+            const { naturalWidth, naturalHeight } = event.currentTarget;
+            setOrientation(
+              naturalWidth > naturalHeight ? "landscape" : naturalHeight > naturalWidth ? "portrait" : "square",
+            );
+          }}
+          className={`block h-auto w-auto object-contain ${imageClass}`}
           draggable={false}
         />
       </div>
@@ -45,9 +60,9 @@ function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }
   const rotations = [-3, 2, -1.5, 3, -2];
 
   return (
-    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden rounded-sm bg-cardstock px-3 py-8 shadow-[0_20px_50px_-20px_rgba(51,64,77,0.45)] sm:min-h-[58vh] sm:px-10 sm:py-14 landscape:min-h-0 landscape:px-2 landscape:py-3">
-      <div className="pointer-events-none absolute inset-x-4 top-3 h-px bg-white/40 sm:inset-x-10 landscape:inset-x-2 landscape:top-1" aria-hidden="true" />
-      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-3 sm:min-h-[50vh] sm:gap-6 landscape:min-h-0 landscape:gap-2">
+    <section className="paper-grain relative min-h-[52vh] flex-1 overflow-hidden rounded-sm bg-cardstock px-[10px] py-[10px] shadow-[0_20px_50px_-20px_rgba(51,64,77,0.45)] sm:min-h-[58vh] sm:px-10 sm:py-10 landscape:min-h-0 landscape:px-[10px] landscape:py-[10px]">
+      <div className="pointer-events-none absolute inset-x-4 top-3 h-px bg-white/40 sm:inset-x-10" aria-hidden="true" />
+      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-[10px] sm:min-h-[50vh] sm:gap-5 landscape:min-h-0 landscape:gap-[10px]">
         {photos.map((photo, index) => (
           <PhotoItem key={photo.id} photo={photo} rotation={rotations[index]} />
         ))}
@@ -97,9 +112,7 @@ export default function BookPage() {
     const touch = event.changedTouches[0];
     const dx = touch.clientX - touchStart.current.x;
     const dy = touch.clientY - touchStart.current.y;
-    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-      touchTracking.current = true;
-    }
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.25) touchTracking.current = true;
   };
 
   const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
@@ -108,13 +121,9 @@ export default function BookPage() {
       touchTracking.current = false;
       return;
     }
-
     const touch = event.changedTouches[0];
     const dx = touch.clientX - touchStart.current.x;
-    if (Math.abs(dx) >= SWIPE_THRESHOLD) {
-      turn(dx < 0 ? 1 : -1);
-    }
-
+    if (Math.abs(dx) >= SWIPE_THRESHOLD) turn(dx < 0 ? 1 : -1);
     touchStart.current = null;
     touchTracking.current = false;
   };
@@ -156,10 +165,7 @@ export default function BookPage() {
                     exit={{ rotateY: 88, opacity: 0 }}
                     transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                     className="flex w-full flex-col sm:flex-row landscape:flex-row"
-                    style={{
-                      transformOrigin: spread > 0 ? "left center" : "center center",
-                      transformStyle: "preserve-3d",
-                    }}
+                    style={{ transformOrigin: spread > 0 ? "left center" : "center center", transformStyle: "preserve-3d" }}
                   >
                     <PhotoPage photos={left} pageIndex={spread * 2} />
                     <div className="h-px w-full bg-black/10 sm:h-auto sm:w-px landscape:h-auto landscape:w-px" />
