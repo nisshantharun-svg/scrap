@@ -1,69 +1,84 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { usePhotos } from "@/hooks/usePhotos";
+import type { Photo } from "@/lib/types";
+
+const PAGE_MIN = 3;
+const PAGE_MAX = 5;
+
+function buildPages(photos: Photo[]) {
+  const pages: Photo[][] = [];
+  for (let i = 0; i < photos.length; i += PAGE_MAX) pages.push(photos.slice(i, i + PAGE_MAX));
+  return pages;
+}
+
+function PhotoPage({ photos, pageIndex }: { photos: Photo[]; pageIndex: number }) {
+  const rotations = [-3, 2, -1.5, 3, -2];
+  return (
+    <section className="relative min-h-[52vh] flex-1 overflow-hidden bg-[#f1e5ca] p-5 shadow-inner sm:min-h-[58vh] sm:p-7">
+      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.8),transparent_35%)]" />
+      <div className="relative grid min-h-[46vh] grid-cols-2 content-center gap-4 sm:min-h-[50vh] sm:gap-5">
+        {photos.map((photo, index) => (
+          <motion.figure key={photo.id} initial={{ opacity: 0, scale: .92, rotate: rotations[index] }} animate={{ opacity: 1, scale: 1, rotate: rotations[index] }} className="relative bg-[#fffdf8] p-2 shadow-[0_8px_18px_-8px_rgba(51,64,77,.45)] sm:p-3">
+            <img src={photo.src} alt={photo.caption || photo.name} className="aspect-[4/3] w-full object-cover" />
+            {photo.caption && <figcaption className="mt-1 truncate text-center font-display text-sm text-ink sm:text-lg">{photo.caption}</figcaption>}
+          </motion.figure>
+        ))}
+        {photos.length < PAGE_MIN && (
+          <Link href="/" aria-label="Add a photo" title="Add a photo" className="flex aspect-[4/3] items-center justify-center rounded-sm border-2 border-dashed border-ink/25 bg-white/20 text-ink/45 transition hover:border-ink/50 hover:bg-white/35 hover:text-ink/70">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-current sm:h-12 sm:w-12"><Plus /></span>
+          </Link>
+        )}
+      </div>
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 font-typewriter text-[9px] tracking-[.2em] text-ink/35">PAGE {pageIndex + 1}</div>
+    </section>
+  );
+}
 
 export default function BookPage() {
   const { photos, isLoading, error } = usePhotos();
-  const [page, setPage] = useState(0);
-  const bookPhotos = photos.slice(0, 5);
-  const photo = bookPhotos[page];
-  const hasPhotos = bookPhotos.length > 0;
+  const [spread, setSpread] = useState(0);
+  const pages = useMemo(() => buildPages(photos), [photos]);
+  const left = pages[spread * 2] ?? [];
+  const right = pages[spread * 2 + 1] ?? [];
+  const hasPhotos = photos.length > 0;
+  const spreadCount = Math.max(1, Math.ceil(pages.length / 2));
 
-  const next = () => setPage((current) => Math.min(current + 1, bookPhotos.length - 1));
-  const previous = () => setPage((current) => Math.max(current - 1, 0));
+  const turn = (direction: 1 | -1) => setSpread((current) => Math.max(0, Math.min(current + direction, spreadCount - 1)));
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#17212b] px-4 py-8 text-[#f7f0df] sm:px-8 sm:py-12">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col">
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 font-typewriter text-sm text-white/70 transition hover:text-white"><ArrowLeft className="h-4 w-4" /> Back to scrapbook</Link>
-          <p className="font-display text-2xl">The Photo Book</p>
-        </div>
-
+    <main className="min-h-screen overflow-hidden bg-[#17212b] px-3 py-6 text-[#f7f0df] sm:px-8 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-7xl flex-col">
+        <header className="mb-5 flex items-center justify-between sm:mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 font-typewriter text-xs text-white/70 transition hover:text-white sm:text-sm"><ArrowLeft className="h-4 w-4" /> Back to scrapbook</Link>
+          <p className="font-display text-xl sm:text-3xl">The Photo Book</p>
+        </header>
         <div className="flex flex-1 items-center justify-center">
           {isLoading && <p className="font-typewriter text-white/60">Opening the book...</p>}
           {error && !hasPhotos && <p className="font-typewriter text-white/70">{error}</p>}
-
-          {!isLoading && !error && !hasPhotos && (
-            <div className="max-w-md text-center">
-              <p className="font-display text-4xl">Your book is waiting for its first memory.</p>
-              <Link href="/" className="mt-6 inline-flex rounded-full bg-white/10 px-5 py-2 font-display text-xl hover:bg-white/20">Add photos</Link>
-            </div>
-          )}
-
-          {!isLoading && hasPhotos && photo && (
-            <div className="w-full max-w-5xl">
-              <div className="relative mx-auto min-h-[62vh] max-w-4xl overflow-hidden rounded-md bg-[#eadfc7] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.65)]">
-                <div className="pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px bg-black/15" />
-                <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(0,0,0,.08),transparent_8%,transparent_92%,rgba(0,0,0,.08))]" />
+          {!isLoading && !error && !hasPhotos && <div className="text-center"><p className="font-display text-3xl sm:text-5xl">Your book is waiting for its first memory.</p><Link href="/" className="mt-5 inline-flex rounded-full bg-white/10 px-5 py-2 font-display text-lg hover:bg-white/20">Add photos</Link></div>}
+          {!isLoading && hasPhotos && (
+            <div className="w-full max-w-6xl">
+              <div className="relative mx-auto flex max-w-6xl overflow-hidden rounded-lg bg-[#d8c9a9] shadow-[0_35px_90px_-25px_rgba(0,0,0,.7)] [perspective:1800px]">
                 <AnimatePresence mode="wait" initial={false}>
-                  <motion.div key={photo.id} initial={{ rotateY: page > 0 ? 75 : 0, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} exit={{ rotateY: -75, opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} className="relative flex min-h-[62vh] items-center justify-center p-5 sm:p-10" style={{ perspective: "1200px" }}>
-                    <div className="relative flex max-h-[55vh] w-full items-center justify-center overflow-hidden bg-white p-3 shadow-[0_12px_30px_-12px_rgba(0,0,0,.35)] sm:w-[82%]">
-                      <img src={photo.src} alt={photo.caption || photo.name} className="max-h-[50vh] w-auto max-w-full object-contain" />
-                      {photo.caption && <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded bg-white/90 px-3 py-1 font-display text-xl text-ink">{photo.caption}</p>}
-                    </div>
+                  <motion.div key={spread} initial={{ rotateY: spread > 0 ? -88 : 0, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} exit={{ rotateY: 88, opacity: 0 }} transition={{ duration: .7, ease: [0.22,1,0.36,1] }} className="flex w-full flex-col sm:flex-row" style={{ transformOrigin: spread > 0 ? "left center" : "center center", transformStyle: "preserve-3d" }}>
+                    <PhotoPage photos={left} pageIndex={spread * 2} />
+                    <div className="h-px w-full bg-black/20 shadow-[0_0_14px_rgba(0,0,0,.2)] sm:h-auto sm:w-px" />
+                    <PhotoPage photos={right} pageIndex={spread * 2 + 1} />
                   </motion.div>
                 </AnimatePresence>
+                <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-6 -translate-x-1/2 bg-gradient-to-r from-black/10 via-black/5 to-black/10 sm:block" />
               </div>
-
-              <div className="mt-7 flex items-center justify-center gap-6">
-                <button type="button" onClick={previous} disabled={page === 0} aria-label="Previous spread" className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 disabled:opacity-25"><ChevronLeft /></button>
-                <span className="font-typewriter text-xs tracking-[0.2em] text-white/60">PHOTO {page + 1} / {bookPhotos.length}</span>
-                <button type="button" onClick={next} disabled={page === bookPhotos.length - 1} aria-label="Next spread" className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 disabled:opacity-25"><ChevronRight /></button>
+              <div className="mt-5 flex items-center justify-center gap-4 sm:mt-7 sm:gap-7">
+                <button type="button" onClick={() => turn(-1)} disabled={spread === 0} aria-label="Previous spread" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 disabled:opacity-20 sm:h-12 sm:w-12"><ChevronLeft /></button>
+                <span className="font-typewriter text-[9px] tracking-[.18em] text-white/55 sm:text-xs">SPREAD {spread + 1} / {spreadCount}</span>
+                <button type="button" onClick={() => turn(1)} disabled={spread === spreadCount - 1} aria-label="Next spread" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 disabled:opacity-20 sm:h-12 sm:w-12"><ChevronRight /></button>
               </div>
-
-              {bookPhotos.length < 5 && (
-                <div className="mt-6 flex justify-center">
-                  <Link href="/" aria-label="Add another photo" title="Add another photo" className="group flex h-24 w-24 items-center justify-center rounded-sm border-2 border-dashed border-white/35 bg-white/5 text-white/50 transition hover:border-white/65 hover:bg-white/10 hover:text-white">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/35 transition group-hover:border-white/65"><Plus className="h-6 w-6" /></span>
-                  </Link>
-                </div>
-              )}
-              <p className="mt-3 text-center font-typewriter text-xs text-white/40">Each double-page spread counts as one photo • Up to 5 photos per book</p>
+              <p className="mt-3 text-center font-typewriter text-[9px] text-white/35 sm:text-xs">Each page holds 3–5 photos when possible • double-spread photos count as one • up to 5 photos per page</p>
             </div>
           )}
         </div>
