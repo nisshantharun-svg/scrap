@@ -12,6 +12,46 @@ import { ErrorBanner } from "./ErrorBanner";
 import { UploadButton } from "./UploadButton";
 import { UploadModal } from "./UploadModal";
 
+function ShootingStars() {
+  const stars = [
+    { top: "8%", left: "5%", delay: 0, duration: 2.8 },
+    { top: "22%", left: "65%", delay: 2.2, duration: 3.2 },
+    { top: "42%", left: "25%", delay: 4.5, duration: 2.6 },
+    { top: "58%", left: "80%", delay: 1.2, duration: 3 },
+    { top: "75%", left: "45%", delay: 6, duration: 2.7 },
+    { top: "15%", left: "85%", delay: 7.5, duration: 3.4 },
+  ];
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      aria-hidden="true"
+    >
+      {stars.map((star, index) => (
+        <motion.div
+          key={index}
+          className="absolute h-[2px] w-20 origin-left rounded-full bg-white/70 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+          style={{ top: star.top, left: star.left, rotate: 35 }}
+          initial={{ x: "-10vw", y: "-10vh", opacity: 0, scaleX: 0.3 }}
+          animate={{
+            x: "55vw",
+            y: "55vh",
+            opacity: [0, 1, 1, 0],
+            scaleX: [0.3, 1, 1.2, 0.2],
+          }}
+          transition={{
+            duration: star.duration,
+            delay: star.delay,
+            repeat: Infinity,
+            repeatDelay: 3 + index * 0.8,
+            ease: "easeIn",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function Scrapbook() {
   const {
     photos,
@@ -25,26 +65,22 @@ export function Scrapbook() {
   } = usePhotos();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const showInitialError =
-    error && photos.length === 0 && !isLoading;
+  const showInitialError = error && photos.length === 0 && !isLoading;
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {/* Decorative night-sky glow */}
+      <ShootingStars />
+
       <div
-        className="pointer-events-none absolute left-[8%] top-[12%] h-32 w-32 rounded-full bg-blue-200/5 blur-3xl"
+        className="pointer-events-none absolute left-[8%] top-[12%] z-0 h-32 w-32 rounded-full bg-blue-200/5 blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute right-[10%] top-[35%] z-0 h-40 w-40 rounded-full bg-purple-300/5 blur-3xl"
         aria-hidden="true"
       />
 
-      <div
-        className="pointer-events-none absolute right-[10%] top-[35%] h-40 w-40 rounded-full bg-purple-300/5 blur-3xl"
-        aria-hidden="true"
-      />
-
-      <UploadButton
-        onClick={() => setIsModalOpen(true)}
-      />
+      <UploadButton onClick={() => setIsModalOpen(true)} />
 
       <AnimatePresence>
         {isModalOpen && (
@@ -62,19 +98,8 @@ export function Scrapbook() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="
-            paper-grain
-            relative
-            rounded-sm
-            bg-cardstock
-            px-4
-            py-10
-            shadow-[0_24px_60px_-25px_rgba(0,0,0,0.55)]
-            sm:px-10
-            sm:py-14
-          "
+          className="paper-grain relative rounded-sm bg-cardstock px-4 py-10 shadow-[0_24px_60px_-25px_rgba(0,0,0,0.55)] sm:px-10 sm:py-14"
         >
-          {/* Subtle paper edge */}
           <div
             className="pointer-events-none absolute inset-x-5 top-3 h-px bg-white/40 sm:inset-x-10"
             aria-hidden="true"
@@ -83,33 +108,18 @@ export function Scrapbook() {
           {isLoading && <PhotoSkeletonGrid />}
 
           {showInitialError && (
-            <ErrorBanner
-              message={error}
-              onRetry={refresh}
-            />
+            <ErrorBanner message={error} onRetry={refresh} />
           )}
 
-          {!isLoading &&
-            !showInitialError &&
-            photos.length === 0 && <EmptyState />}
+          {!isLoading && !showInitialError && photos.length === 0 && (
+            <EmptyState />
+          )}
 
           {!isLoading && photos.length > 0 && (
             <>
-              <div
-                className="
-                  columns-1
-                  gap-6
-                  sm:columns-2
-                  lg:columns-3
-                  xl:columns-4
-                "
-              >
+              <div className="columns-1 gap-6 sm:columns-2 lg:columns-3 xl:columns-4">
                 {photos.map((photo, index) => (
-                  <PhotoCard
-                    key={photo.id}
-                    photo={photo}
-                    index={index}
-                  />
+                  <PhotoCard key={photo.id} photo={photo} index={index} />
                 ))}
               </div>
 
@@ -125,30 +135,11 @@ export function Scrapbook() {
                     type="button"
                     onClick={loadMore}
                     disabled={isLoadingMore}
-                    className="
-                      flex
-                      items-center
-                      gap-2
-                      rounded-full
-                      px-5
-                      py-2
-                      font-display
-                      text-2xl
-                      text-ink/70
-                      underline
-                      decoration-2
-                      underline-offset-4
-                      transition
-                      hover:bg-black/5
-                      hover:text-ink
-                      disabled:cursor-not-allowed
-                      disabled:opacity-50
-                    "
+                    className="flex items-center gap-2 rounded-full px-5 py-2 font-display text-2xl text-ink/70 underline decoration-2 underline-offset-4 transition hover:bg-black/5 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isLoadingMore && (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     )}
-
                     {isLoadingMore
                       ? "Turning the page..."
                       : "Turn the page for more"}
